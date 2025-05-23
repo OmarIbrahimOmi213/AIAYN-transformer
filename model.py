@@ -149,7 +149,7 @@ class EncoderBlock(nn.Module):
 
 class Encoder(nn.Module):
     """
-    Applying multuple Iterations of the EncoderBlock
+    Applying multuple iterations of the EncoderBlock
     """
     def __init__(self, layers: nn.ModuleList) -> None:
         super().__init__()
@@ -163,6 +163,7 @@ class Encoder(nn.Module):
 
 class DecoderBlock(nn.Module):
     """
+        Combines all previously created blocks and output of EncoderBlock to make Decoder
     """
     def __init__(self, self_attention_block: MultiHeadAttentionBlock, cross_attention_block: MultiHeadAttentionBlock, feed_forward_block: FeedForwardBlock, dropout: float):
         super().__init__()
@@ -171,12 +172,33 @@ class DecoderBlock(nn.Module):
         self.feed_forward_block = feed_forward_block
         self.residual_connection = nn.ModuleList([ResidualConnection(dropout) for _ in range(3)])
 
-    def forward(self, x):
+    def forward(self, x, encoder_output, src_mask, tgt_mask):
+        x = residual_connection[0](x, lambda x: self.self_attention_block(x, x, x, tgt_mask))
+        x = residual_connection[1](x, lambda x: self.cross_attention_block(x, encoder_output, encoder_output, src_mask))
+        x = residual_connection[2](x, self.feed_forward_block)
+        return x
 
 class Decoder(nn.Module):
     """
+        Apply multiple iterations of the DecoderBlock
     """
-    def __init__(self):
+    def __init__(self, layers: nn.ModuleList) -> None:
         super().__init__()
+        self.layers = layers
+        self.norm = LayerNormalization()
+
+    def forward(self, x, mask):
+        for layer in self.layers:
+            x = layer(x, encoder_output, src_mask, tgt_mask)
+        return self.norm(x)
+
+class ProjectionLayer(nn.Module):
+    """
+
+    """
+    def __init__(self, d_model: int, vocab_size: int) -> None:
+        super().__init__()
+        self.proj = nn.Linear(d_model, vocab_size)
 
     def forward(self, x):
+        return torch.lof_softmax(self.proj(x), dim = -1)
