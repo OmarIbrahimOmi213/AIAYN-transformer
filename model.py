@@ -47,7 +47,7 @@ class LayerNormalization(nn.Module):
         Normalizes the last dimension of input while scaling with learned parameters
     """
     def __init__(self, eps: float = 1e-6) -> None:
-        super().__init__():
+        super().__init__()
         self.eps = eps
         self.alpha = nn.Parameter(torch.ones(1))
         self.bias = nn.Parameter(torch.zeros(1))
